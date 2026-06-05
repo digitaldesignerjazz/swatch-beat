@@ -3,99 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swatch .beat Live Demo</title>
+    <title>Swatch .beat • Live Demo</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: system-ui, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .font-display { font-family: 'Space Grotesk', system_ui, sans-serif; }
         .beat-display {
             font-family: 'Space Grotesk', system_ui, sans-serif;
-            font-size: 4.5rem;
+            font-size: 5rem;
             font-weight: 700;
-            letter-spacing: -0.05em;
+            letter-spacing: -0.06em;
+            line-height: 1;
+        }
+        .section {
+            transition: all 0.2s ease;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200">
-    <div class="max-w-2xl mx-auto px-6 pt-12">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-bold tracking-tight">Swatch .beat</h1>
-            <p class="text-slate-400 mt-2">Live Universal Time</p>
-        </div>
-
-        <!-- Live .beat Clock -->
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-10 text-center mb-8">
-            <div class="text-sm text-slate-400 mb-2">CURRENT TIME</div>
-            <div id="beat-display" class="beat-display text-emerald-400">@000.00</div>
-            <div id="utc-time" class="text-slate-400 mt-2 text-sm"></div>
-        </div>
-
-        <!-- Converter -->
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
-            <h2 class="text-xl font-semibold mb-6">Converter</h2>
+<body class="bg-slate-950 text-slate-200 dark">
+    <!-- Header -->
+    <div class="border-b border-slate-800 bg-slate-900 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-clock text-white"></i>
+                </div>
+                <div>
+                    <span class="font-display text-2xl font-semibold tracking-tight">Swatch .beat</span>
+                </div>
+            </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-center gap-x-2">
+                <!-- Theme Toggle -->
+                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-3xl p-1">
+                    <button onclick="setTheme('dark')" id="theme-dark"
+                            class="px-3 py-1.5 text-xs rounded-3xl flex items-center gap-x-1.5 bg-slate-700 text-white">
+                        <i class="fa-solid fa-moon"></i>
+                        <span class="hidden sm:inline">Dark</span>
+                    </button>
+                    <button onclick="setTheme('light')" id="theme-light"
+                            class="px-3 py-1.5 text-xs rounded-3xl flex items-center gap-x-1.5 hover:bg-slate-700">
+                        <i class="fa-solid fa-sun"></i>
+                        <span class="hidden sm:inline">Light</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-6 pt-8 pb-16">
+        
+        <!-- Live Clock -->
+        <div class="text-center mb-10">
+            <div class="text-xs tracking-[2px] text-slate-400 mb-1">UNIVERSAL TIME</div>
+            <div id="beat-display" class="beat-display text-emerald-400">@000.00</div>
+            <div id="utc-time" class="text-slate-400 mt-1 text-sm font-mono"></div>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <div class="font-semibold text-lg">Countdown to Target .beat</div>
+                    <div class="text-sm text-slate-400">How long until a specific moment?</div>
+                </div>
+                <div class="text-xs px-3 py-1 bg-slate-800 rounded-2xl text-slate-400">LIVE</div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs text-slate-400 block mb-1.5">Target .beat</label>
+                    <input id="countdown-target" type="number" step="0.01" value="750" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-2xl font-mono text-center">
+                </div>
+                <button onclick="startCountdown()"
+                        class="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-medium flex items-center justify-center gap-x-2 active:scale-[0.985] transition-all">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Start Countdown</span>
+                </button>
+            </div>
+            
+            <div id="countdown-display" class="mt-6 hidden">
+                <div class="text-center">
+                    <div class="text-sm text-slate-400">TIME REMAINING</div>
+                    <div id="countdown-value" class="text-5xl font-mono font-semibold text-emerald-400 mt-1">--:--:--</div>
+                    <div id="countdown-beats" class="text-xs text-slate-400 mt-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Converter Section -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+            <h2 class="font-semibold text-xl mb-6">Converter</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- UTC to .beat -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">UTC Time</label>
-                    <div class="flex gap-2">
-                        <input id="utc-hour" type="number" value="12" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
-                        <input id="utc-minute" type="number" value="0" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
-                        <input id="utc-second" type="number" value="0" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
+                    <div class="text-sm font-medium text-slate-300 mb-3">UTC → .beat</div>
+                    <div class="flex gap-2 mb-4">
+                        <input id="utc-h" type="number" value="14" class="bg-slate-800 border border-slate-700 rounded-2xl px-3 py-2 w-16 text-center">
+                        <input id="utc-m" type="number" value="30" class="bg-slate-800 border border-slate-700 rounded-2xl px-3 py-2 w-16 text-center">
+                        <input id="utc-s" type="number" value="0" class="bg-slate-800 border border-slate-700 rounded-2xl px-3 py-2 w-16 text-center">
                     </div>
-                    <button onclick="convertUtcToBeat()"
-                            class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-2xl text-sm font-medium">
-                        Convert to .beat
+                    <button onclick="convertToBeat()" 
+                            class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 rounded-2xl text-sm font-medium">
+                        Convert
                     </button>
-                    <div id="beat-result" class="mt-3 text-emerald-400 font-mono text-lg"></div>
+                    <div id="to-beat-result" class="mt-3 text-emerald-400 font-mono text-xl"></div>
                 </div>
 
                 <!-- .beat to UTC -->
                 <div>
-                    <label class="block text-sm text-slate-400 mb-2">.beat</label>
-                    <input id="beat-input" type="number" step="0.01" value="500" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-full text-center">
-                    <button onclick="convertBeatToUtc()"
-                            class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-2xl text-sm font-medium">
-                        Convert to UTC
+                    <div class="text-sm font-medium text-slate-300 mb-3">.beat → UTC</div>
+                    <input id="beat-val" type="number" step="0.01" value="650" 
+                           class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-full text-center mb-4">
+                    <button onclick="convertToUtc()" 
+                            class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 rounded-2xl text-sm font-medium">
+                        Convert
                     </button>
-                    <div id="utc-result" class="mt-3 text-emerald-400 font-mono text-lg"></div>
+                    <div id="to-utc-result" class="mt-3 text-emerald-400 font-mono text-xl"></div>
                 </div>
             </div>
         </div>
 
         <div class="text-center text-xs text-slate-500 mt-8">
-            @000 = 00:00 UTC &nbsp;|&nbsp; One .beat = 86.4 seconds
+            One .beat = 86.4 seconds &nbsp;•&nbsp; @000 = 00:00 UTC
         </div>
     </div>
 
     <script src="../tools/beat_converter.js"></script>
     <script>
+        let countdownInterval = null;
+
         function updateLiveBeat() {
             const beat = getCurrentBeat();
             document.getElementById('beat-display').textContent = formatBeat(beat);
             
             const now = new Date();
-            const utcStr = now.toUTCString().slice(17, 25);
-            document.getElementById('utc-time').textContent = `UTC: ${utcStr}`;
+            document.getElementById('utc-time').textContent = 
+                `UTC ${now.getUTCHours().toString().padStart(2,'0')}:${now.getUTCMinutes().toString().padStart(2,'0')}:${now.getUTCSeconds().toString().padStart(2,'0')}`;
         }
 
-        function convertUtcToBeat() {
-            const h = parseInt(document.getElementById('utc-hour').value);
-            const m = parseInt(document.getElementById('utc-minute').value);
-            const s = parseInt(document.getElementById('utc-second').value);
+        function setTheme(theme) {
+            const html = document.documentElement;
+            const darkBtn = document.getElementById('theme-dark');
+            const lightBtn = document.getElementById('theme-light');
+
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                html.classList.remove('light');
+                darkBtn.classList.add('bg-slate-700', 'text-white');
+                lightBtn.classList.remove('bg-slate-700', 'text-white');
+                document.body.style.background = '#0f172a';
+            } else {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                lightBtn.classList.add('bg-slate-700', 'text-white');
+                darkBtn.classList.remove('bg-slate-700', 'text-white');
+                document.body.style.background = '#f8fafc';
+                document.body.style.color = '#0f172a';
+            }
+            localStorage.setItem('swatch-theme', theme);
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('swatch-theme') || 'dark';
+            setTheme(saved);
+        }
+
+        function convertToBeat() {
+            const h = parseInt(document.getElementById('utc-h').value) || 0;
+            const m = parseInt(document.getElementById('utc-m').value) || 0;
+            const s = parseInt(document.getElementById('utc-s').value) || 0;
             const beat = utcToBeat(h, m, s);
-            document.getElementById('beat-result').textContent = formatBeat(beat);
+            document.getElementById('to-beat-result').textContent = formatBeat(beat);
         }
 
-        function convertBeatToUtc() {
-            const beat = parseFloat(document.getElementById('beat-input').value);
+        function convertToUtc() {
+            const beat = parseFloat(document.getElementById('beat-val').value);
+            if (isNaN(beat)) return;
             const { hours, minutes, seconds } = beatToUtc(beat);
-            document.getElementById('utc-result').innerHTML = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} UTC`;
+            document.getElementById('to-utc-result').innerHTML = 
+                `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')} UTC`;
         }
 
-        // Update live clock every second
-        setInterval(updateLiveBeat, 1000);
-        updateLiveBeat();
+        function startCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            const targetBeat = parseFloat(document.getElementById('countdown-target').value);
+            if (isNaN(targetBeat)) return;
+
+            const display = document.getElementById('countdown-display');
+            const valueEl = document.getElementById('countdown-value');
+            const beatsEl = document.getElementById('countdown-beats');
+            display.classList.remove('hidden');
+
+            countdownInterval = setInterval(() => {
+                const current = getCurrentBeat();
+                let diff = targetBeat - current;
+                
+                if (diff < 0) diff += 1000;
+
+                const totalSeconds = Math.floor(diff * 86.4);
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
+
+                valueEl.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                beatsEl.textContent = `${diff.toFixed(2)} beats remaining`;
+
+                if (diff <= 0.01) {
+                    clearInterval(countdownInterval);
+                    valueEl.textContent = "00:00:00";
+                    beatsEl.textContent = "Target reached!";
+                }
+            }, 250);
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                e.preventDefault();
+                document.getElementById('countdown-target').focus();
+                document.getElementById('countdown-target').select();
+            }
+        });
+
+        function init() {
+            loadTheme();
+            updateLiveBeat();
+            setInterval(updateLiveBeat, 500);
+            
+            // Auto-convert on input
+            ['utc-h','utc-m','utc-s'].forEach(id => {
+                document.getElementById(id).addEventListener('input', convertToBeat);
+            });
+            document.getElementById('beat-val').addEventListener('input', convertToUtc);
+            
+            // Initial conversions
+            convertToBeat();
+            convertToUtc();
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
