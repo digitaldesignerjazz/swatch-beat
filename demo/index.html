@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swatch .beat Live Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; }
+        .beat-display {
+            font-family: 'Space Grotesk', system_ui, sans-serif;
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <div class="max-w-2xl mx-auto px-6 pt-12">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold tracking-tight">Swatch .beat</h1>
+            <p class="text-slate-400 mt-2">Live Universal Time</p>
+        </div>
+
+        <!-- Live .beat Clock -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-10 text-center mb-8">
+            <div class="text-sm text-slate-400 mb-2">CURRENT TIME</div>
+            <div id="beat-display" class="beat-display text-emerald-400">@000.00</div>
+            <div id="utc-time" class="text-slate-400 mt-2 text-sm"></div>
+        </div>
+
+        <!-- Converter -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8">
+            <h2 class="text-xl font-semibold mb-6">Converter</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- UTC to .beat -->
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">UTC Time</label>
+                    <div class="flex gap-2">
+                        <input id="utc-hour" type="number" value="12" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
+                        <input id="utc-minute" type="number" value="0" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
+                        <input id="utc-second" type="number" value="0" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-20 text-center">
+                    </div>
+                    <button onclick="convertUtcToBeat()"
+                            class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-2xl text-sm font-medium">
+                        Convert to .beat
+                    </button>
+                    <div id="beat-result" class="mt-3 text-emerald-400 font-mono text-lg"></div>
+                </div>
+
+                <!-- .beat to UTC -->
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">.beat</label>
+                    <input id="beat-input" type="number" step="0.01" value="500" class="bg-slate-800 border border-slate-700 rounded-2xl px-4 py-2 w-full text-center">
+                    <button onclick="convertBeatToUtc()"
+                            class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-2xl text-sm font-medium">
+                        Convert to UTC
+                    </button>
+                    <div id="utc-result" class="mt-3 text-emerald-400 font-mono text-lg"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-xs text-slate-500 mt-8">
+            @000 = 00:00 UTC &nbsp;|&nbsp; One .beat = 86.4 seconds
+        </div>
+    </div>
+
+    <script src="../tools/beat_converter.js"></script>
+    <script>
+        function updateLiveBeat() {
+            const beat = getCurrentBeat();
+            document.getElementById('beat-display').textContent = formatBeat(beat);
+            
+            const now = new Date();
+            const utcStr = now.toUTCString().slice(17, 25);
+            document.getElementById('utc-time').textContent = `UTC: ${utcStr}`;
+        }
+
+        function convertUtcToBeat() {
+            const h = parseInt(document.getElementById('utc-hour').value);
+            const m = parseInt(document.getElementById('utc-minute').value);
+            const s = parseInt(document.getElementById('utc-second').value);
+            const beat = utcToBeat(h, m, s);
+            document.getElementById('beat-result').textContent = formatBeat(beat);
+        }
+
+        function convertBeatToUtc() {
+            const beat = parseFloat(document.getElementById('beat-input').value);
+            const { hours, minutes, seconds } = beatToUtc(beat);
+            document.getElementById('utc-result').innerHTML = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} UTC`;
+        }
+
+        // Update live clock every second
+        setInterval(updateLiveBeat, 1000);
+        updateLiveBeat();
+    </script>
+</body>
+</html>
