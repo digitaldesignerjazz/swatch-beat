@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swatch .beat Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&amp;family=Inter:wght@400;500&amp;display=swap');
+        
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .font-display { font-family: 'Space Grotesk', system_ui, sans-serif; }
+        .beat-font {
+            font-family: 'Space Grotesk', system_ui, sans-serif;
+            font-feature-settings: "tnum";
+        }
+        .timer-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <div class="max-w-5xl mx-auto px-6 py-8">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-x-4">
+                <div class="w-11 h-11 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-clock text-3xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-display text-4xl font-semibold tracking-tighter">Swatch .beat</h1>
+                    <p class="text-slate-400 -mt-1">Universal Time Tools</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-3">
+                <div class="px-4 py-1.5 bg-slate-900 border border-slate-700 rounded-3xl text-sm">
+                    <span class="text-emerald-400">@000</span> = 00:00 UTC
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Clock -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Current .beat -->
+                <div>
+                    <div class="section-header text-emerald-400 mb-2">CURRENT .BEAT</div>
+                    <div id="current-beat" class="beat-font text-7xl font-bold text-emerald-400 tracking-tighter">@000.00</div>
+                </div>
+                
+                <!-- Current UTC -->
+                <div>
+                    <div class="section-header text-slate-400 mb-2">CURRENT UTC</div>
+                    <div id="current-utc" class="text-4xl font-mono text-slate-300 tracking-tight">00:00:00</div>
+                    <div class="text-xs text-slate-500 mt-1">One .beat = 86.4 seconds</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <div class="section-header text-slate-400">LIVE COUNTDOWNS</div>
+                <button onclick="addCountdown()"
+                        class="flex items-center gap-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-sm font-medium active:scale-[0.985]">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Target</span>
+                </button>
+            </div>
+
+            <!-- Countdowns Container -->
+            <div id="countdowns" class="space-y-3">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6">
+            <div class="section-header text-slate-400 mb-4">QUICK ACTIONS</div>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="addQuickCountdown(250)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm">@250 (6h)</button>
+                <button onclick="addQuickCountdown(500)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm">@500 (12h)</button>
+                <button onclick="addQuickCountdown(750)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm">@750 (18h)</button>
+                <button onclick="addQuickCountdown(333)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm">@333 (~8h)</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="../tools/beat_converter.js"></script>
+    <script>
+        let countdowns = [];
+        let interval = null;
+
+        function updateLiveClock() {
+            const beat = getCurrentBeat();
+            document.getElementById('current-beat').textContent = formatBeat(beat);
+            
+            const now = new Date();
+            const utc = now.toUTCString().slice(17, 25);
+            document.getElementById('current-utc').textContent = utc;
+        }
+
+        function createCountdownCard(targetBeat, id) {
+            const div = document.createElement('div');
+            div.className = `timer-card bg-slate-900 border border-slate-700 rounded-3xl p-6 flex items-center justify-between`;
+            div.id = `countdown-${id}`;
+            
+            div.innerHTML = `
+                <div class="flex-1">
+                    <div class="flex items-center gap-x-3">
+                        <div>
+                            <div class="text-xs text-slate-400">TARGET</div>
+                            <div class="font-mono text-3xl font-semibold text-emerald-400">@${targetBeat.toFixed(2)}</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-slate-400">REMAINING</div>
+                            <div id="time-${id}" class="font-mono text-4xl font-semibold text-white">--:--:--</div>
+                            <div id="beats-${id}" class="text-xs text-emerald-400 mt-0.5">-- beats</div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="removeCountdown(${id})" 
+                        class="ml-6 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-2xl text-sm flex items-center gap-x-2">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            return div;
+        }
+
+        function addCountdown(targetBeat = null) {
+            if (!targetBeat) {
+                targetBeat = parseFloat(prompt('Enter target .beat (e.g. 750):', '750'));
+            }
+            if (isNaN(targetBeat)) return;
+
+            const id = Date.now();
+            const card = createCountdownCard(targetBeat, id);
+            document.getElementById('countdowns').appendChild(card);
+            
+            countdowns.push({ id, target: targetBeat });
+            
+            if (!interval) startUpdating();
+        }
+
+        function addQuickCountdown(beat) {
+            addCountdown(beat);
+        }
+
+        function removeCountdown(id) {
+            const card = document.getElementById(`countdown-${id}`);
+            if (card) card.remove();
+            countdowns = countdowns.filter(c => c.id !== id);
+            
+            if (countdowns.length === 0 && interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+        }
+
+        function updateAllCountdowns() {
+            const current = getCurrentBeat();
+            
+            countdowns.forEach(item => {
+                let diff = item.target - current;
+                if (diff < 0) diff += 1000;
+
+                const totalSec = diff * 86.4;
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = Math.floor(totalSec % 60);
+                const ms = Math.floor((totalSec % 1) * 1000);
+
+                const timeEl = document.getElementById(`time-${item.id}`);
+                const beatsEl = document.getElementById(`beats-${item.id}`);
+
+                if (timeEl && beatsEl) {
+                    timeEl.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${ms.toString().padStart(3,'0')}`;
+                    beatsEl.textContent = `${diff.toFixed(2)} beats remaining`;
+                }
+            });
+        }
+
+        function startUpdating() {
+            if (interval) clearInterval(interval);
+            interval = setInterval(() => {
+                updateLiveClock();
+                updateAllCountdowns();
+            }, 100);
+        }
+
+        function init() {
+            updateLiveClock();
+            setInterval(updateLiveClock, 500);
+            
+            // Add a default countdown
+            setTimeout(() => {
+                addCountdown(750);
+            }, 800);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
