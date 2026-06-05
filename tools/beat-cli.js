@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 /**
  * Swatch .beat CLI Tool
- * Usage examples:
- *   node beat-cli.js current
- *   node beat-cli.js convert-utc 14 30 0
- *   node beat-cli.js convert-beat 650
- *   node beat-cli.js countdown 750
  */
 
 const { getCurrentBeat, formatBeat, utcToBeat, beatToUtc } = require('./beat_converter');
@@ -27,16 +22,15 @@ Commands:
   current                  Show current .beat time
   convert-utc <h> <m> <s>  Convert UTC time to .beat
   convert-beat <beat>      Convert .beat to UTC
-  countdown <target>       Live countdown to a target .beat (e.g. 750)
+  countdown <target>       Live countdown with millisecond precision
 
-Examples:
-  node beat-cli.js current
+Example:
   node beat-cli.js countdown 750
 `);
 }
 
 // ============================================
-// LIVE COUNTDOWN
+// LIVE COUNTDOWN WITH MILLISECOND PRECISION
 // ============================================
 function startLiveCountdown(targetBeat) {
     if (countdownInterval) {
@@ -50,29 +44,37 @@ function startLiveCountdown(targetBeat) {
         let diff = targetBeat - current;
 
         if (diff < 0) {
-            diff += 1000; // wrap to next day
+            diff += 1000;
         }
 
-        const totalSeconds = Math.floor(diff * 86.4);
+        // Calculate total remaining seconds with high precision
+        const totalSeconds = diff * 86.4;
+
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
+        const seconds = Math.floor(totalSeconds % 60);
+        const milliseconds = Math.floor((totalSeconds % 1) * 1000);
 
-        const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timeStr = 
+            `${hours.toString().padStart(2, '0')}:` +
+            `${minutes.toString().padStart(2, '0')}:` +
+            `${seconds.toString().padStart(2, '0')}.` +
+            `${milliseconds.toString().padStart(3, '0')}`;
+
         const beatStr = `${diff.toFixed(2)} beats`;
 
         clearLine();
         process.stdout.write(`Time remaining: ${timeStr}  |  ${beatStr} remaining`);
 
-        if (diff <= 0.05) {
+        if (diff <= 0.001) {
             clearInterval(countdownInterval);
             clearLine();
             console.log(`\n\n✅ Target @${targetBeat.toFixed(2)} reached!`);
             process.exit(0);
         }
-    }, 250); // Update every 250ms for smooth feel
+    }, 50); // Update every 50ms for smooth millisecond display
 
-    // Handle Ctrl+C gracefully
+    // Graceful exit on Ctrl+C
     process.on('SIGINT', () => {
         if (countdownInterval) clearInterval(countdownInterval);
         clearLine();
