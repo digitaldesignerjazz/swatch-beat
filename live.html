@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swatch .beat • Live</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&amp;display=swap');
+        
+        body {
+            font-family: 'Space Grotesk', system_ui, -apple-system, sans-serif;
+        }
+        
+        .beat-display {
+            font-size: 8rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.08em;
+            font-feature-settings: "tnum";
+        }
+        
+        .beat-label {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-black text-white flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center justify-center gap-x-3 mb-2">
+                <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span class="text-emerald-400 text-sm font-semibold tracking-[3px]">LIVE</span>
+            </div>
+            <h1 class="text-2xl font-semibold tracking-tight">Swatch .beat</h1>
+        </div>
+
+        <!-- Main .beat Display -->
+        <div class="mb-4">
+            <div id="beat" 
+                 class="beat-display text-emerald-400 tabular-nums">
+                @000.000
+            </div>
+        </div>
+
+        <!-- UTC Time -->
+        <div class="text-slate-400 text-xl font-mono tracking-[2px]" id="utc">
+            00:00:00.000 UTC
+        </div>
+
+        <div class="mt-8 text-xs text-slate-500">
+            Updates every 16ms • One .beat = 86.4 seconds
+        </div>
+
+    </div>
+
+    <script src="beat_converter.js"></script>
+    <script>
+        function updateBeat() {
+            // Get current .beat with high precision
+            const now = new Date();
+            
+            // Calculate precise .beat
+            const totalSeconds = 
+                (now.getUTCHours() * 3600) + 
+                (now.getUTCMinutes() * 60) + 
+                now.getUTCSeconds() + 
+                (now.getUTCMilliseconds() / 1000);
+            
+            const beat = totalSeconds / 86.4;
+            
+            // Display with 3 decimal places
+            document.getElementById('beat').textContent = 
+                '@' + beat.toFixed(3).padStart(7, '0');
+            
+            // Display UTC with milliseconds
+            const utcTime = now.toUTCString().slice(17, 25) + 
+                          '.' + now.getUTCMilliseconds().toString().padStart(3, '0');
+            
+            document.getElementById('utc').textContent = utcTime + ' UTC';
+        }
+
+        // Update every 16ms for smooth millisecond feel
+        setInterval(updateBeat, 16);
+        updateBeat(); // Initial call
+
+        // Keyboard hint
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '?') {
+                alert('This page shows live Swatch .beat time with millisecond precision.\n\n@000 = 00:00:00 UTC');
+            }
+        });
+    </script>
+</body>
+</html>
